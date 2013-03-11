@@ -15,7 +15,7 @@
 %% API Function Exports
 %% ~~~~~~~~~~~~~~~~~~~~
 
--export([start_link/0, test_db/0, test_read/0]).
+-export([start_link/0, test_db/1, test_read/0]).
 
 %% ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %% gen_server Function Exports
@@ -27,8 +27,8 @@
 %% API Function Definitions
 %% ~~~~~~~~~~~~~~~~~~~~~~~~
 
-test_db() ->
-	Res = insert(),
+test_db(Doc) ->
+	Res = insert(Doc),
 	case Res of
 		{atomic, ResultOfFun} ->
 			ok;
@@ -47,18 +47,22 @@ test_read() ->
 			{error, Reason}
 	end.
 
-insert() ->
+insert(Doc) ->
 	T = fun() ->
-		X = #document{id="", doc="test document", timestamp="1967-02-21"},
+		X = #document{id=guid(), doc=Doc, timestamp=erlang:now()},
 		mnesia:write(X)
 	end,
 	mnesia:transaction(T).
 
 read() ->
 	R = fun() ->
-		mnesia:read(document, [], write)
+		%%mnesia:read(document, id, write)
+		mnesia:match_object(#document{ _ ='_'})	
 	end,
 	mnesia:transaction(R).
+
+guid() ->
+	{node(), erlang:now()}.
 
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
