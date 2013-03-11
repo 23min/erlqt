@@ -1,0 +1,20 @@
+%%-*- mode: erlang -*-
+{application, logga, [
+  {description, ""},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {applications, [
+    kernel,
+    stdlib,
+    mnesia
+  ]},
+  {mod, {
+    logga_app, []
+  }},
+  {env, []},
+  {modules, [
+    logga_app,
+    logga_sup,
+    logga_server
+  ]}
+]}.

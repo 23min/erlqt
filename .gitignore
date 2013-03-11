@@ -1,0 +1,8 @@
+ebin/*
+*.beam
+deps/*
+.eunit
+apps/*/ebin
+rel/loggr
+erl_crash.dump
+Mnesia*

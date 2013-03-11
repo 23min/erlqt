@@ -1,0 +1,1 @@
+-record(document, {id, doc, timestamp}).
