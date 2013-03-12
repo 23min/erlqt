@@ -15,6 +15,7 @@
   {modules, [
     logga_app,
     logga_sup,
-    logga_server
+    logga_server,
+    logga_mq_server
   ]}
 ]}.

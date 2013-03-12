@@ -45,4 +45,5 @@ init([]) ->
     %% MaxRestart = max number of times to retry within MaxTime (seconds)
     %% MaxTime = max time (seconds) to try restarting a child
     Server = ?CHILD(logga_server, worker),
-    {ok, { {one_for_one, 5, 10}, [Server]} }.
+    Mq = ?CHILD(logga_mq_server, worker),
+    {ok, { {one_for_one, 5, 10}, [Server, Mq]} }.
