@@ -46,4 +46,5 @@ init([]) ->
     %% MaxTime = max time (seconds) to try restarting a child
     Server = ?CHILD(logga_server, worker),
     Mq = ?CHILD(logga_mq_server, worker),
-    {ok, { {one_for_one, 5, 10}, [Server, Mq]} }.
+    Sub = ?CHILD(logga_sub_server, worker),
+    {ok, { {one_for_one, 5, 10}, [Server, Mq, Sub]} }.

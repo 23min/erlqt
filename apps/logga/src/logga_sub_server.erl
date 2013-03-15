@@ -5,7 +5,7 @@
 %%% @doc 
 %%% @end
 
--module(logga_mq_server).
+-module(logga_sub_server).
 -behaviour(gen_server).
 -define(SERVER, ?MODULE).
 
@@ -13,7 +13,7 @@
 %% API Function Exports
 %% ~~~~~~~~~~~~~~~~~~~~
 
--export([start_link/0, send/1]).
+-export([start_link/0, accept_loop/1]).
 
 %% ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %% gen_server Function Exports
@@ -25,9 +25,6 @@
 %% API Function Definitions
 %% ~~~~~~~~~~~~~~~~~~~~~~~~
 
-send(Msg) ->
-	gen_server:call(?SERVER, {message, Msg}).
-
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
@@ -36,16 +33,21 @@ start_link() ->
 %% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 init(_Args) ->
-    {ok, Context} = erlzmq:context(),
-	{ok, Publisher} = erlzmq:socket(Context, [push, {active, false}]),
-	ok = erlzmq:bind(Publisher, "tcp://127.0.0.1:5561"),
-	ok = erlzmq:setsockopt(Publisher, sndtimeo, 2000),
-	{ok, Publisher}.
+	%process_flag(trap_exit, true),
+	%{ok, Context} = erlzmq:context(),
+	%{ok, Subscriber} = erlzmq:socket(Context, [pull, {active_pid, self()}]),
+	%ok = erlzmq:connect(Subscriber, "tcp://127.0.0.1:5561"),
+	%Pid = proc_lib:spawn_link(?MODULE, accept_loop, [Subscriber]),
 
-handle_call({message, Msg}, _From, Publisher) ->
-	erlzmq:send(Publisher, Msg),
-	Reply = ok,
-	{reply, Reply, Publisher};
+	State = {foo},
+    {ok, State}.
+
+accept_loop(Subscriber) ->
+	%erlzmq:send(Subscriber, <<"Anything">>),
+	{ok, Msg} = erlzmq:recv(Subscriber),
+	io:format("Message received: ~p", [Msg]),
+	accept_loop(Subscriber),
+	ok.
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
@@ -65,10 +67,17 @@ handle_cast(_Msg, State) ->
 	% {noreply,NewState,hibernate}
 	% {stop,Reason,NewState}
 
+handle_info({'EXIT', State, Reason}, State) ->
+	io:format("'EXIT' received"),
+	%{stop, Reason, undefined};
+	accept_loop(State);
+	%% Other handle_info/2 clauses
 handle_info({zmq, _S, Msg, []}, State) ->
-	io:format("logga_sub_server handle_info!"),
+	io:format("logga_sub_server handle_info! ~p", [Msg]),
+
 	{noreply, State};
 handle_info(_Info, State) ->
+	io:format("Message received"),
     {noreply, State}.
     % {noreply,NewState}
 	% {noreply,NewState,Timeout}
@@ -77,7 +86,6 @@ handle_info(_Info, State) ->
 
 terminate(_Reason, State) ->
 	erlzmq:close(State),
-	erlzmq:terminate(State),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
