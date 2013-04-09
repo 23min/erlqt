@@ -1,13 +1,16 @@
 #loggr
 
-timeline
+Experiment in connecting a PyQt GUI to Erlang via 0MQ
+
+See original blog post http://23min.com/2013/03/erlang-to-pyqt-via-0mq/
 
 ##Author(s)
 
 * Peter Bruinsma <peter@23min.com>
 
-##Copyright
+##License
 
-Copyright (c) 2013 Peter Bruinsma <peter@23min.com>.  All rights reserved.
+Public Domain
+
 
 
