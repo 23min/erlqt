@@ -12,5 +12,23 @@ See original blog post http://23min.com/2013/03/erlang-to-pyqt-via-0mq/
 
 Public Domain
 
+##Usage
+
+Install Qt5, SIP, PyQt
+
+
+In the shall, start the Python gui:
+
+		$ cd client
+		$ python gui.py
+
+In another shell:
+
+		$ make all
+		$ make run
+
+Send text from Erlang to the gui:
+
+		$ logga_server:send(<<"Ponies!">>).
 
 
