@@ -5,8 +5,7 @@
   {registered, []},
   {applications, [
     kernel,
-    stdlib,
-    mnesia
+    stdlib
   ]},
   {mod, {
     logga_app, []
@@ -15,8 +14,6 @@
   {modules, [
     logga_app,
     logga_sup,
-    logga_server,
-    logga_mq_server,
-    logga_sub_server
+    logga_server
   ]}
 ]}.

@@ -9,13 +9,11 @@
 -behaviour(gen_server).
 -define(SERVER, ?MODULE).
 
--include("document.hrl").
-
 %% ~~~~~~~~~~~~~~~~~~~~
 %% API Function Exports
 %% ~~~~~~~~~~~~~~~~~~~~
 
--export([start_link/0, test_db/1, test_read/0]).
+-export([start_link/0, send/1]).
 
 %% ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %% gen_server Function Exports
@@ -27,42 +25,8 @@
 %% API Function Definitions
 %% ~~~~~~~~~~~~~~~~~~~~~~~~
 
-test_db(Doc) ->
-	Res = insert(Doc),
-	case Res of
-		{atomic, ResultOfFun} ->
-			ok;
-		{aborted, Reason} ->
-			io:format("Transaction aborted ~w~n", [Reason]),
-			{error, Reason}
-	end.
-
-test_read() ->
-	Res = read(),
-	case Res of
-		{atomic, ResultOfFun} ->
-			ok, ResultOfFun;
-		{aborted, Reason} ->
-			io:format("Transaction aborted ~w~n", [Reason]),
-			{error, Reason}
-	end.
-
-insert(Doc) ->
-	T = fun() ->
-		X = #document{id=guid(), doc=Doc, timestamp=erlang:now()},
-		mnesia:write(X)
-	end,
-	mnesia:transaction(T).
-
-read() ->
-	R = fun() ->
-		%%mnesia:read(document, id, write)
-		mnesia:match_object(#document{ _ ='_'})	
-	end,
-	mnesia:transaction(R).
-
-guid() ->
-	{node(), erlang:now()}.
+send(Msg) ->
+	gen_server:call(?SERVER, {message, Msg}).
 
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
@@ -71,8 +35,17 @@ start_link() ->
 %% gen_server Function Definitions
 %% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-init(Args) ->
-    {ok, Args}.
+init(_Args) ->
+    {ok, Context} = erlzmq:context(),
+	{ok, Publisher} = erlzmq:socket(Context, [push, {active, false}]),
+	ok = erlzmq:bind(Publisher, "tcp://127.0.0.1:5561"),
+	ok = erlzmq:setsockopt(Publisher, sndtimeo, 2000),
+	{ok, Publisher}.
+
+handle_call({message, Msg}, _From, Publisher) ->
+	erlzmq:send(Publisher, Msg),
+	Reply = ok,
+	{reply, Reply, Publisher};
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
@@ -92,6 +65,9 @@ handle_cast(_Msg, State) ->
 	% {noreply,NewState,hibernate}
 	% {stop,Reason,NewState}
 
+handle_info({zmq, _S, Msg, []}, State) ->
+	io:format("logga_sub_server handle_info!"),
+	{noreply, State};
 handle_info(_Info, State) ->
     {noreply, State}.
     % {noreply,NewState}
@@ -99,7 +75,9 @@ handle_info(_Info, State) ->
 	% {noreply,NewState,hibernate}
 	% {stop,Reason,NewState}
 
-terminate(_Reason, _State) ->
+terminate(_Reason, State) ->
+	erlzmq:close(State),
+	erlzmq:term(State),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
